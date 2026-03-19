@@ -1780,8 +1780,9 @@ var MILESTONES = [
   { pts:75,  emoji:'💖',  title:'學霸女王',   sub:'從公主升級成女王了！' },
   { pts:100, emoji:'💎',  title:'學神',       sub:'100 點！傳說中的學神誕生了！' }
 ];
-var MINI_BALL_IMGS = ['study','cute','happy','drink','sister','study'];
-var STICKER_IMGS = ['happy','cute','drink','study','sister'];
+var ALL_IMG_KEYS = Object.keys(IMG);
+function randomImgKey() { return ALL_IMG_KEYS[Math.floor(Math.random()*ALL_IMG_KEYS.length)]; }
+function shuffledImgKeys(n) { var a = ALL_IMG_KEYS.slice().sort(function(){return 0.5-Math.random();}); return a.slice(0,n); }
 
 var spinning = false;
 var currentTask = null;
@@ -1842,11 +1843,12 @@ function initGlassBox() {
   var box = document.getElementById('glassBox');
   if (!box) return;
   box.innerHTML = '';
-  for (var i = 0; i < MINI_BALL_IMGS.length; i++) {
+  var ballKeys = shuffledImgKeys(6);
+  for (var i = 0; i < 6; i++) {
     var ball = document.createElement('div');
     ball.className = 'mini-ball';
     var img = document.createElement('img');
-    img.src = IMG[MINI_BALL_IMGS[i]];
+    img.src = IMG[ballKeys[i]];
     img.alt = '';
     ball.appendChild(img);
     box.appendChild(ball);
@@ -1914,7 +1916,7 @@ function spinGashapon() {
     var scene = document.getElementById('capsuleScene');
     var resultCard = document.getElementById('resultCard');
 
-    document.getElementById('capsuleFace').src = IMG[currentTask.img];
+    document.getElementById('capsuleFace').src = IMG[randomImgKey()];
     capsuleTop.style.background = colors.top;
     capsuleBottom.style.background = colors.bottom;
 
@@ -1956,7 +1958,7 @@ function openCapsule() {
   setTimeout(function() {
     sparkles.innerHTML = '';
     document.getElementById('capsuleScene').style.display = 'none';
-    document.getElementById('resultChar').src = IMG[currentTask.img];
+    document.getElementById('resultChar').src = IMG[randomImgKey()];
     document.getElementById('resultTaskName').textContent = currentTask.emoji + ' ' + currentTask.name;
     document.getElementById('resultTaskDesc').textContent = currentTask.desc;
     document.getElementById('resultCard').classList.add('active');
@@ -2384,7 +2386,7 @@ function renderStickerPage() {
     if (i < filledOnCard) {
       slot.classList.add('filled');
       var img = document.createElement('img');
-      var stickerKey = STICKER_IMGS[i % STICKER_IMGS.length];
+      var stickerKey = ALL_IMG_KEYS[i % ALL_IMG_KEYS.length];
       img.src = IMG[stickerKey];
       img.alt = '';
       slot.appendChild(img);
