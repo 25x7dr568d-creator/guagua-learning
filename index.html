@@ -1856,7 +1856,7 @@ function getPdfUrl(paper, type) {
   } else {
     fileName = (type === 'answer') ? baseName + '_答案' : baseName;
   }
-  return PDF_BASE_URL + folder + '/' + subFolder + '/' + fileName + '.pdf';
+  return PDF_BASE_URL + folder + '/' + subFolder + '/' + fileName + '.pdf#navpanes=0&zoom=page-width';
 }
 
 // 學校版本（同版本的卷排後面，跨版本優先出）
