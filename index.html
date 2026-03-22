@@ -2226,7 +2226,7 @@ var timerRemaining = 0;
 var globalTimerActive = false;
 var completedTasks = [];
 var IS_DEV = location.search.indexOf('dev') > -1;
-var TIMER_DURATION = IS_DEV ? 10 : 30 * 60;
+var TIMER_DURATION = IS_DEV ? 60 : 30 * 60;
 
 function startTimer() {
   document.getElementById('capsuleOverlay').classList.remove('active');
