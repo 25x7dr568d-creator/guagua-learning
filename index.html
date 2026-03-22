@@ -515,6 +515,50 @@ body {
   padding:14px 32px; font-size:20px; font-weight:700;
   cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,0.15);
 }
+/* === Global Timer Bar === */
+.global-timer-bar {
+  position:fixed; top:0; left:0; right:0; z-index:200;
+  background:linear-gradient(135deg, #FFB5C5, #C084FC);
+  padding:8px 16px; display:flex; align-items:center; gap:12px;
+  box-shadow:0 2px 10px rgba(192,132,252,0.3);
+  font-weight:700; color:#fff;
+}
+.global-timer-info {
+  flex:1; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.global-timer-countdown {
+  font-size:20px; font-variant-numeric:tabular-nums; min-width:60px; text-align:center;
+}
+.global-timer-progress {
+  position:absolute; bottom:0; left:0; right:0; height:3px;
+  background:rgba(255,255,255,0.3);
+}
+.global-timer-progress-fill {
+  height:100%; background:#fff; transition:width 0.5s;
+}
+body.timer-active .page { padding-top:50px; }
+/* 寫完了按鈕 */
+.done-early-btn {
+  background:linear-gradient(135deg, #84fab0, #8fd3f4);
+  color:#2D5F8A; border:none; border-radius:24px;
+  padding:16px 36px; font-size:20px; font-weight:800;
+  cursor:pointer; box-shadow:0 4px 15px rgba(132,250,176,0.4);
+  margin-top:16px;
+}
+/* 寫完了中間面板 */
+.done-early-panel {
+  display:none; text-align:center; padding:40px 20px;
+  animation:slideUp 0.5s ease;
+}
+.done-early-panel h2 {
+  font-size:28px; margin:16px 0;
+  background:linear-gradient(90deg, #84fab0, #8fd3f4);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text; font-weight:900;
+}
+.done-early-panel .hint {
+  font-size:14px; color:#999; margin-top:12px;
+}
 .result-card .corner-deco {
   position:absolute; font-size:18px;
 }
@@ -996,6 +1040,17 @@ body {
 <div class="bg-deco" id="bgDeco"></div>
 <div class="floating-particles" id="floatingParticles"></div>
 
+<!-- 全域計時器 bar -->
+<div id="globalTimerBar" class="global-timer-bar" style="display:none;">
+  <div class="global-timer-info">
+    <span id="globalTimerTask"></span>
+  </div>
+  <div class="global-timer-countdown" id="globalTimerCountdown">30:00</div>
+  <div class="global-timer-progress">
+    <div class="global-timer-progress-fill" id="globalTimerFill" style="width:0%"></div>
+  </div>
+</div>
+
 <!-- ===== PAGE: GASHAPON (Home) ===== -->
 <div id="page-gashapon" class="page active">
   <button class="settings-btn" onclick="showSettings()">⚙️</button>
@@ -1099,6 +1154,7 @@ body {
       <div class="timer-right">
         <button class="pdf-open-btn" onclick="openPdf('question')">📝 看題目</button>
         <div class="pdf-hint-text">點按鈕在新分頁開啟 PDF，看著螢幕寫在白紙上！</div>
+        <button class="done-early-btn" onclick="doneEarly()">✅ 寫完了！</button>
       </div>
     </div>
     <!-- 一般版面（無考卷時） -->
@@ -1126,7 +1182,18 @@ body {
         <button class="timer-btn pause" id="pause-btn" onclick="togglePause()">⏸️ 暫停</button>
         <button class="timer-btn cancel" onclick="cancelTimer()">✖ 取消</button>
       </div>
+      <button class="done-early-btn" onclick="doneEarly()">✅ 寫完了！</button>
     </div>
+  </div>
+  <!-- 寫完了中間面板 -->
+  <div class="done-early-panel" id="doneEarlyPanel">
+    <img id="doneEarlyImg" style="width:160px; border-radius:50%; margin-bottom:16px;" alt="">
+    <h2>✨ 寫完了！好棒！</h2>
+    <div class="answer-section" id="doneEarlyAnswer" style="display:none; margin:20px 0;">
+      <button class="answer-btn" onclick="openPdf('answer')">✅ 看答案對答案</button>
+    </div>
+    <button class="go-btn" onclick="backToHomeKeepTimer()" style="margin-top:16px;">🏠 回首頁繼續學習</button>
+    <p class="hint">⏱️ 計時器還在跑，可以再扭一個任務喔！</p>
   </div>
   <div class="celebration" id="celebration">
     <img id="celebrate-img" alt="">
@@ -1915,7 +1982,7 @@ function goToPage(name) {
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
   var navItem = document.querySelector('.nav-item[data-page="'+name+'"]');
   if (navItem) navItem.classList.add('active');
-  if (name === 'gashapon') { updateHome(); resetGashapon(); }
+  if (name === 'gashapon') { updateHome(); if (!globalTimerActive) resetGashapon(); }
   if (name === 'sticker') renderStickerPage();
   if (name === 'calendar') renderCalendar();
   // 每個頁面啟動對應的顯化文字
@@ -2156,6 +2223,8 @@ var timerInterval = null;
 var timerEndTime = null;
 var timerPaused = false;
 var timerRemaining = 0;
+var globalTimerActive = false;
+var completedTasks = [];
 var IS_DEV = location.search.indexOf('dev') > -1;
 var TIMER_DURATION = IS_DEV ? 10 : 30 * 60;
 
@@ -2165,6 +2234,7 @@ function startTimer() {
   document.getElementById('confetti').innerHTML = '';
   goToPage('timer');
   document.getElementById('timerContainer').style.display = 'block';
+  document.getElementById('doneEarlyPanel').style.display = 'none';
   document.getElementById('celebration').classList.remove('show');
   document.getElementById('celebration').style.display = 'none';
   document.getElementById('timer-task-label').textContent = currentTask.emoji + ' ' + currentTask.name + ' — ' + currentTask.desc;
@@ -2184,15 +2254,23 @@ function startTimer() {
     document.getElementById('timer-task-img').src = randomImg;
   }
 
-  timerPaused = false;
-  var pauseBtn = useSplit ? document.getElementById('pause-btn-split') : document.getElementById('pause-btn');
-  pauseBtn.textContent = '⏸️ 暫停';
-  timerEndTime = Date.now() + TIMER_DURATION * 1000;
-  timerRemaining = TIMER_DURATION;
-  // 記住目前使用哪種版面
   window._timerUseSplit = useSplit;
+
+  if (!globalTimerActive) {
+    // 首次啟動
+    globalTimerActive = true;
+    completedTasks = [];
+    timerPaused = false;
+    var pauseBtn = useSplit ? document.getElementById('pause-btn-split') : document.getElementById('pause-btn');
+    pauseBtn.textContent = '⏸️ 暫停';
+    timerEndTime = Date.now() + TIMER_DURATION * 1000;
+    timerRemaining = TIMER_DURATION;
+    timerInterval = setInterval(tickTimer, 250);
+    showGlobalTimerBar();
+  }
+  // 接續任務：不重設計時器，只更新 UI
+  updateGlobalTimerBar();
   updateTimerDisplay();
-  timerInterval = setInterval(tickTimer, 250);
   startAffirmations('timer');
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
 }
@@ -2202,6 +2280,7 @@ function tickTimer() {
   var remaining = Math.max(0, Math.ceil((timerEndTime - Date.now()) / 1000));
   timerRemaining = remaining;
   updateTimerDisplay();
+  updateGlobalTimerBar();
   if (remaining <= 0) {
     clearInterval(timerInterval);
     timerInterval = null;
@@ -2249,14 +2328,22 @@ function togglePause() {
 function cancelTimer() {
   clearInterval(timerInterval);
   timerInterval = null;
+  globalTimerActive = false;
+  completedTasks = [];
+  hideGlobalTimerBar();
   stopAffirmations();
   resetGashapon();
   goToPage('gashapon');
 }
 
 function timerComplete() {
+  globalTimerActive = false;
+  hideGlobalTimerBar();
   stopAffirmations();
+  // 不管在哪個頁面，切回計時頁顯示慶祝
+  goToPage('timer');
   document.getElementById('timerContainer').style.display = 'none';
+  document.getElementById('doneEarlyPanel').style.display = 'none';
   document.getElementById('celebration').style.display = 'block';
   setTimeout(function() { document.getElementById('celebration').classList.add('show'); }, 10);
   // 有考卷 → 顯示看答案按鈕
@@ -2265,6 +2352,60 @@ function timerComplete() {
   var imgKeys = Object.keys(IMG);
   document.getElementById('celebrate-img').src = IMG[imgKeys[Math.floor(Math.random()*imgKeys.length)]];
   launchConfetti();
+}
+
+// === 寫完了（提早完成）===
+function doneEarly() {
+  stopAffirmations();
+  // 記錄已完成的任務
+  completedTasks.push({ task: currentTask, paper: currentPaper });
+  // 標記考卷完成
+  if (currentPaper) {
+    var data = loadData();
+    if (!data.completedPapers) data.completedPapers = [];
+    if (data.completedPapers.indexOf(currentPaper.id) === -1) {
+      data.completedPapers.push(currentPaper.id);
+    }
+    saveData(data);
+  }
+  // 顯示寫完了面板
+  document.getElementById('timerContainer').style.display = 'none';
+  document.getElementById('doneEarlyPanel').style.display = 'block';
+  document.getElementById('doneEarlyAnswer').style.display = currentPaper ? 'block' : 'none';
+  var imgKeys = Object.keys(IMG);
+  document.getElementById('doneEarlyImg').src = IMG[imgKeys[Math.floor(Math.random()*imgKeys.length)]];
+}
+
+function backToHomeKeepTimer() {
+  document.getElementById('doneEarlyPanel').style.display = 'none';
+  spinning = false;
+  currentTask = null;
+  currentPaper = null;
+  document.getElementById('capsuleOverlay').classList.remove('active');
+  document.getElementById('resultCard').classList.remove('active');
+  document.getElementById('confetti').innerHTML = '';
+  initGlassBox();
+  goToPage('gashapon');
+}
+
+// === Global Timer Bar ===
+function showGlobalTimerBar() {
+  document.getElementById('globalTimerBar').style.display = 'flex';
+  document.body.classList.add('timer-active');
+}
+function hideGlobalTimerBar() {
+  document.getElementById('globalTimerBar').style.display = 'none';
+  document.body.classList.remove('timer-active');
+}
+function updateGlobalTimerBar() {
+  var m = Math.floor(timerRemaining / 60);
+  var s = timerRemaining % 60;
+  document.getElementById('globalTimerCountdown').textContent =
+    (m<10?'0':'') + m + ':' + (s<10?'0':'') + s;
+  document.getElementById('globalTimerTask').textContent =
+    currentTask ? ('⏱ ' + currentTask.emoji + ' ' + currentTask.name) : '⏱ 學習中';
+  var pct = ((TIMER_DURATION - timerRemaining) / TIMER_DURATION * 100);
+  document.getElementById('globalTimerFill').style.width = pct + '%';
 }
 
 function confirmComplete() {
