@@ -1848,9 +1848,14 @@ function getPdfUrl(paper, type) {
   if (!paper) return '';
   var folder = (paper.type === 'midterm' || paper.type === 'final') ? '段考' : SUBJECT_FOLDER[paper.subject];
   var subFolder = (type === 'question') ? '題目' : '答案';
-  // 檔名 = source_name（空格換底線）
   var baseName = (paper.source + '_' + paper.name).replace(/\s+/g, '_');
-  var fileName = (type === 'answer') ? baseName + '_答案' : baseName;
+  var fileName;
+  if (type === 'answer' && paper.source.indexOf('門市') !== -1) {
+    // 門市卷答案只有一份：{source}_{科目}_答案.pdf
+    fileName = paper.source + '_' + SUBJECT_FOLDER[paper.subject] + '_答案';
+  } else {
+    fileName = (type === 'answer') ? baseName + '_答案' : baseName;
+  }
   return PDF_BASE_URL + folder + '/' + subFolder + '/' + fileName + '.pdf';
 }
 
