@@ -1915,7 +1915,7 @@ function goToPage(name) {
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
   var navItem = document.querySelector('.nav-item[data-page="'+name+'"]');
   if (navItem) navItem.classList.add('active');
-  if (name === 'gashapon') updateHome();
+  if (name === 'gashapon') { updateHome(); resetGashapon(); }
   if (name === 'sticker') renderStickerPage();
   if (name === 'calendar') renderCalendar();
   // 每個頁面啟動對應的顯化文字
