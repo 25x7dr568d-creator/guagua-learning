@@ -550,14 +550,29 @@ body.timer-active .page { padding-top:50px; }
   display:none; text-align:center; padding:40px 20px;
   animation:slideUp 0.5s ease;
 }
+.done-early-panel img {
+  border:4px solid var(--pink); box-shadow:0 4px 15px rgba(228,120,150,0.3);
+}
 .done-early-panel h2 {
-  font-size:28px; margin:16px 0;
-  background:linear-gradient(90deg, #84fab0, #8fd3f4);
+  font-size:32px; margin:16px 0;
+  background:linear-gradient(90deg, #84fab0, #8fd3f4, #C084FC);
+  background-size:300% 100%;
   -webkit-background-clip:text; -webkit-text-fill-color:transparent;
   background-clip:text; font-weight:900;
+  animation:shimmer 3s linear infinite;
+}
+.done-early-panel .go-home-btn {
+  background:linear-gradient(135deg, #FF6B9D, #C084FC, #60A5FA);
+  background-size:200% 100%;
+  color:#fff; border:none; border-radius:30px;
+  padding:16px 40px; font-size:22px; font-weight:700;
+  cursor:pointer; display:block; width:80%; margin:20px auto;
+  box-shadow:0 4px 15px rgba(192,132,252,0.4);
+  animation:shimmer 3s linear infinite;
 }
 .done-early-panel .hint {
-  font-size:14px; color:#999; margin-top:12px;
+  font-size:15px; color:var(--text-light); margin-top:12px;
+  opacity:0.8;
 }
 .result-card .corner-deco {
   position:absolute; font-size:18px;
@@ -1192,7 +1207,7 @@ body.timer-active .page { padding-top:50px; }
     <div class="answer-section" id="doneEarlyAnswer" style="display:none; margin:20px 0;">
       <button class="answer-btn" onclick="openPdf('answer')">✅ 看答案對答案</button>
     </div>
-    <button class="go-btn" onclick="backToHomeKeepTimer()" style="margin-top:16px;">🏠 回首頁繼續學習</button>
+    <button class="go-home-btn" onclick="backToHomeKeepTimer()">🏠 回首頁繼續學習</button>
     <p class="hint">⏱️ 計時器還在跑，可以再扭一個任務喔！</p>
   </div>
   <div class="celebration" id="celebration">
