@@ -458,12 +458,10 @@ body {
   padding:12px 30px; font-size:20px; font-weight:700;
   cursor:pointer; margin:8px 0; display:block; width:100%;
 }
-.pdf-buttons { margin:10px 0; }
 .pdf-btn {
   border:none; border-radius:20px;
-  padding:12px 20px; font-size:18px; font-weight:700;
-  cursor:pointer; margin:4px; width:calc(50% - 12px);
-  display:inline-block; vertical-align:top;
+  padding:14px 24px; font-size:18px; font-weight:700;
+  cursor:pointer; display:inline-block;
   box-shadow:0 3px 10px rgba(0,0,0,0.15);
 }
 .pdf-question {
@@ -474,9 +472,48 @@ body {
   background:linear-gradient(135deg, #A1C4FD, #C2E9FB);
   color:#2D5F8A;
 }
-.pdf-hint {
-  font-size:13px; color:var(--text-light); margin-top:6px;
-  opacity:0.8; letter-spacing:0.5px;
+/* 結果卡關閉按鈕 */
+.result-close {
+  position:absolute; top:8px; right:8px; z-index:10;
+  background:rgba(0,0,0,0.08); border:none; border-radius:50%;
+  width:32px; height:32px; font-size:18px; cursor:pointer;
+  color:var(--text-light); line-height:32px; text-align:center;
+}
+.result-close:hover { background:rgba(0,0,0,0.15); }
+/* 計時頁左右分割（有考卷時） */
+.timer-split {
+  display:flex; gap:20px; align-items:flex-start;
+  padding:20px;
+}
+.timer-split .timer-left {
+  flex:0 0 40%; text-align:center;
+}
+.timer-split .timer-right {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  min-height:400px; text-align:center;
+}
+.timer-right .pdf-open-btn {
+  background:linear-gradient(135deg, #FF9A9E, #FAD0C4);
+  color:#8B3A62; border:none; border-radius:24px;
+  padding:24px 40px; font-size:24px; font-weight:800;
+  cursor:pointer; margin-bottom:20px;
+  box-shadow:0 6px 20px rgba(255,154,158,0.4);
+  animation:float 3s ease-in-out infinite;
+}
+.timer-right .pdf-hint-text {
+  font-size:15px; color:var(--text-light); opacity:0.7;
+  margin-top:8px; letter-spacing:0.5px;
+}
+/* 完成頁看答案按鈕 */
+.answer-section {
+  margin:16px 0;
+}
+.answer-btn {
+  background:linear-gradient(135deg, #A1C4FD, #C2E9FB);
+  color:#2D5F8A; border:none; border-radius:20px;
+  padding:14px 32px; font-size:20px; font-weight:700;
+  cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,0.15);
 }
 .result-card .corner-deco {
   position:absolute; font-size:18px;
@@ -1012,6 +1049,7 @@ body {
     <div class="capsule-tap-hint" id="tapHint">👆 點我打開！</div>
   </div>
   <div class="result-card" id="resultCard">
+    <button class="result-close" onclick="closeResult()">✕</button>
     <span class="corner-deco tl">✨</span>
     <span class="corner-deco tr">✨</span>
     <span class="corner-deco bl">💖</span>
@@ -1020,11 +1058,6 @@ body {
     <div class="magic-text">✨ 今天的任務是 ✨</div>
     <div class="task-name-big" id="resultTaskName"></div>
     <div class="task-desc" id="resultTaskDesc"></div>
-    <div class="pdf-buttons" id="pdfButtons" style="display:none;">
-      <button class="pdf-btn pdf-question" onclick="openPdf('question')">📝 看題目</button>
-      <button class="pdf-btn pdf-answer" onclick="openPdf('answer')">✅ 看答案</button>
-      <div class="pdf-hint">在白紙上寫答案，寫完再看答案對答案喔！</div>
-    </div>
     <button class="go-btn" onclick="startTimer()">開始計時！⏱️</button>
     <button class="retry-btn" onclick="retryTwist()">再扭一次 🔄</button>
   </div>
@@ -1034,35 +1067,73 @@ body {
 
 <!-- ===== PAGE: TIMER ===== -->
 <div id="page-timer" class="page">
-  <div class="timer-container">
+  <div class="timer-container" id="timerContainer">
     <div class="timer-task-label" id="timer-task-label"></div>
-    <div class="timer-circle-wrap">
-      <div class="timer-circle-bg">
-        <svg viewBox="0 0 260 260">
-          <circle class="track" cx="130" cy="130" r="120"/>
-          <circle class="progress" id="timer-circle" cx="130" cy="130" r="120"
-            stroke-dasharray="754" stroke-dashoffset="754"/>
-        </svg>
+    <!-- 左右分割容器（有考卷時啟用） -->
+    <div id="timerSplit" class="timer-split" style="display:none;">
+      <div class="timer-left">
+        <div class="timer-circle-wrap">
+          <div class="timer-circle-bg">
+            <svg viewBox="0 0 260 260">
+              <circle class="track" cx="130" cy="130" r="120"/>
+              <circle class="progress" id="timer-circle-split" cx="130" cy="130" r="120"
+                stroke-dasharray="754" stroke-dashoffset="754"/>
+            </svg>
+          </div>
+          <img class="timer-circle-img" id="timer-task-img-split" alt="">
+        </div>
+        <div class="timer-stars" id="timer-stars-split">
+          <span class="timer-star">⭐</span>
+          <span class="timer-star">⭐</span>
+          <span class="timer-star">⭐</span>
+          <span class="timer-star">⭐</span>
+          <span class="timer-star">⭐</span>
+          <span class="timer-star">⭐</span>
+        </div>
+        <div class="timer-display" id="timer-display-split">30:00</div>
+        <div class="timer-controls">
+          <button class="timer-btn pause" id="pause-btn-split" onclick="togglePause()">⏸️ 暫停</button>
+          <button class="timer-btn cancel" onclick="cancelTimer()">✖ 取消</button>
+        </div>
       </div>
-      <img class="timer-circle-img" id="timer-task-img" alt="">
+      <div class="timer-right">
+        <button class="pdf-open-btn" onclick="openPdf('question')">📝 看題目</button>
+        <div class="pdf-hint-text">點按鈕在新分頁開啟 PDF，看著螢幕寫在白紙上！</div>
+      </div>
     </div>
-    <div class="timer-stars" id="timer-stars">
-      <span class="timer-star">⭐</span>
-      <span class="timer-star">⭐</span>
-      <span class="timer-star">⭐</span>
-      <span class="timer-star">⭐</span>
-      <span class="timer-star">⭐</span>
-      <span class="timer-star">⭐</span>
-    </div>
-    <div class="timer-display" id="timer-display">30:00</div>
-    <div class="timer-controls">
-      <button class="timer-btn pause" id="pause-btn" onclick="togglePause()">⏸️ 暫停</button>
-      <button class="timer-btn cancel" onclick="cancelTimer()">✖ 取消</button>
+    <!-- 一般版面（無考卷時） -->
+    <div id="timerNormal">
+      <div class="timer-circle-wrap">
+        <div class="timer-circle-bg">
+          <svg viewBox="0 0 260 260">
+            <circle class="track" cx="130" cy="130" r="120"/>
+            <circle class="progress" id="timer-circle" cx="130" cy="130" r="120"
+              stroke-dasharray="754" stroke-dashoffset="754"/>
+          </svg>
+        </div>
+        <img class="timer-circle-img" id="timer-task-img" alt="">
+      </div>
+      <div class="timer-stars" id="timer-stars">
+        <span class="timer-star">⭐</span>
+        <span class="timer-star">⭐</span>
+        <span class="timer-star">⭐</span>
+        <span class="timer-star">⭐</span>
+        <span class="timer-star">⭐</span>
+        <span class="timer-star">⭐</span>
+      </div>
+      <div class="timer-display" id="timer-display">30:00</div>
+      <div class="timer-controls">
+        <button class="timer-btn pause" id="pause-btn" onclick="togglePause()">⏸️ 暫停</button>
+        <button class="timer-btn cancel" onclick="cancelTimer()">✖ 取消</button>
+      </div>
     </div>
   </div>
   <div class="celebration" id="celebration">
     <img id="celebrate-img" alt="">
     <h2>🎉 恭喜完成！</h2>
+    <div class="answer-section" id="answerSection" style="display:none;">
+      <button class="answer-btn" onclick="openPdf('answer')">✅ 看答案對答案</button>
+    </div>
     <div class="learning-note-section">
       <label>✏️ 今天學了什麼？</label>
       <textarea class="learning-note-input" id="learning-note" rows="3" placeholder="寫下你學到的東西，或貼 YouTube 連結..."></textarea>
@@ -2005,8 +2076,6 @@ function openCapsule() {
     document.getElementById('resultChar').src = IMG[randomImgKey()];
     document.getElementById('resultTaskName').textContent = currentTask.emoji + ' ' + currentTask.name;
     document.getElementById('resultTaskDesc').textContent = currentTask.desc;
-    // 有考卷時顯示 PDF 按鈕
-    document.getElementById('pdfButtons').style.display = currentPaper ? 'block' : 'none';
     document.getElementById('resultCard').classList.add('active');
     launchConfetti();
   }, 600);
@@ -2016,6 +2085,14 @@ function openPdf(type) {
   if (!currentPaper) return;
   var url = getPdfUrl(currentPaper, type);
   window.open(url, '_blank');
+}
+
+function closeResult() {
+  document.getElementById('capsuleOverlay').classList.remove('active');
+  document.getElementById('resultCard').classList.remove('active');
+  document.getElementById('confetti').innerHTML = '';
+  resetGashapon();
+  goToPage('gashapon');
 }
 
 function retryTwist() {
@@ -2076,19 +2153,33 @@ function startTimer() {
   document.getElementById('resultCard').classList.remove('active');
   document.getElementById('confetti').innerHTML = '';
   goToPage('timer');
-  document.querySelector('.timer-container').style.display = 'block';
+  document.getElementById('timerContainer').style.display = 'block';
   document.getElementById('celebration').classList.remove('show');
   document.getElementById('celebration').style.display = 'none';
   document.getElementById('timer-task-label').textContent = currentTask.emoji + ' ' + currentTask.name + ' — ' + currentTask.desc;
   document.getElementById('learning-note').value = '';
-  // 從圖庫隨機選一張顯示在計時頁
+
+  // 有考卷 → 左右分割，無考卷 → 一般版面
+  var useSplit = !!currentPaper;
+  document.getElementById('timerSplit').style.display = useSplit ? 'flex' : 'none';
+  document.getElementById('timerNormal').style.display = useSplit ? 'none' : 'block';
+
+  // 從圖庫隨機選一張
   var imgKeys = Object.keys(IMG);
-  document.getElementById('timer-task-img').src = IMG[imgKeys[Math.floor(Math.random()*imgKeys.length)]];
+  var randomImg = IMG[imgKeys[Math.floor(Math.random()*imgKeys.length)]];
+  if (useSplit) {
+    document.getElementById('timer-task-img-split').src = randomImg;
+  } else {
+    document.getElementById('timer-task-img').src = randomImg;
+  }
 
   timerPaused = false;
-  document.getElementById('pause-btn').textContent = '⏸️ 暫停';
+  var pauseBtn = useSplit ? document.getElementById('pause-btn-split') : document.getElementById('pause-btn');
+  pauseBtn.textContent = '⏸️ 暫停';
   timerEndTime = Date.now() + TIMER_DURATION * 1000;
   timerRemaining = TIMER_DURATION;
+  // 記住目前使用哪種版面
+  window._timerUseSplit = useSplit;
   updateTimerDisplay();
   timerInterval = setInterval(tickTimer, 250);
   startAffirmations('timer');
@@ -2110,29 +2201,37 @@ function tickTimer() {
 function updateTimerDisplay() {
   var m = Math.floor(timerRemaining / 60);
   var s = timerRemaining % 60;
-  document.getElementById('timer-display').textContent =
-    (m<10?'0':'') + m + ':' + (s<10?'0':'') + s;
+  var timeText = (m<10?'0':'') + m + ':' + (s<10?'0':'') + s;
   var pct = (TIMER_DURATION - timerRemaining) / TIMER_DURATION;
-  // Circular progress (754 = 2*PI*120)
-  var circle = document.getElementById('timer-circle');
-  if (circle) circle.setAttribute('stroke-dashoffset', 754 - (754 * pct));
-  // Light up stars (6 stars for 30 min = 1 every 5 min)
-  var stars = document.querySelectorAll('.timer-star');
+  var dashOffset = 754 - (754 * pct);
   var litCount = Math.floor(pct * 6);
-  for (var si = 0; si < stars.length; si++) {
-    if (si < litCount) stars[si].classList.add('lit');
-    else stars[si].classList.remove('lit');
+
+  // 更新對應的版面（split 或 normal）
+  var suffix = window._timerUseSplit ? '-split' : '';
+  var displayEl = document.getElementById('timer-display' + suffix);
+  if (displayEl) displayEl.textContent = timeText;
+  var circleEl = document.getElementById('timer-circle' + suffix);
+  if (circleEl) circleEl.setAttribute('stroke-dashoffset', dashOffset);
+  var starsContainer = document.getElementById('timer-stars' + suffix);
+  if (starsContainer) {
+    var stars = starsContainer.querySelectorAll('.timer-star');
+    for (var si = 0; si < stars.length; si++) {
+      if (si < litCount) stars[si].classList.add('lit');
+      else stars[si].classList.remove('lit');
+    }
   }
 }
 
 function togglePause() {
+  var suffix = window._timerUseSplit ? '-split' : '';
+  var btn = document.getElementById('pause-btn' + suffix);
   if (timerPaused) {
     timerPaused = false;
     timerEndTime = Date.now() + timerRemaining * 1000;
-    document.getElementById('pause-btn').textContent = '⏸️ 暫停';
+    if (btn) btn.textContent = '⏸️ 暫停';
   } else {
     timerPaused = true;
-    document.getElementById('pause-btn').textContent = '▶️ 繼續';
+    if (btn) btn.textContent = '▶️ 繼續';
   }
 }
 
@@ -2146,9 +2245,11 @@ function cancelTimer() {
 
 function timerComplete() {
   stopAffirmations();
-  document.querySelector('.timer-container').style.display = 'none';
+  document.getElementById('timerContainer').style.display = 'none';
   document.getElementById('celebration').style.display = 'block';
   setTimeout(function() { document.getElementById('celebration').classList.add('show'); }, 10);
+  // 有考卷 → 顯示看答案按鈕
+  document.getElementById('answerSection').style.display = currentPaper ? 'block' : 'none';
   // 從圖庫隨機選一張顯示在完成頁
   var imgKeys = Object.keys(IMG);
   document.getElementById('celebrate-img').src = IMG[imgKeys[Math.floor(Math.random()*imgKeys.length)]];
