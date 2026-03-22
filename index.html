@@ -537,6 +537,14 @@ body {
   height:100%; background:#fff; transition:width 0.5s;
 }
 body.timer-active .page { padding-top:50px; }
+.global-timer-bar.timer-expired {
+  animation:timerExpiredFlash 1s ease-in-out infinite;
+  background:linear-gradient(135deg, #FFD700, #FF6B6B);
+}
+@keyframes timerExpiredFlash {
+  0%, 100% { opacity:1; }
+  50% { opacity:0.6; }
+}
 /* 寫完了按鈕 */
 .done-early-btn {
   background:linear-gradient(135deg, #84fab0, #8fd3f4);
@@ -2344,6 +2352,7 @@ function cancelTimer() {
   clearInterval(timerInterval);
   timerInterval = null;
   globalTimerActive = false;
+  timerExpired = false;
   completedTasks = [];
   hideGlobalTimerBar();
   stopAffirmations();
@@ -2351,19 +2360,27 @@ function cancelTimer() {
   goToPage('gashapon');
 }
 
+var timerExpired = false; // 30 分鐘已到但還沒完成當前任務
+
 function timerComplete() {
+  timerExpired = true;
+  // 不強制跳頁，bar 改成閃爍提示
+  document.getElementById('globalTimerCountdown').textContent = '時間到！';
+  document.getElementById('globalTimerTask').textContent = '⏰ 做完這個就可以得分囉！';
+  document.getElementById('globalTimerBar').classList.add('timer-expired');
+}
+
+function showCelebration() {
   globalTimerActive = false;
+  timerExpired = false;
   hideGlobalTimerBar();
   stopAffirmations();
-  // 不管在哪個頁面，切回計時頁顯示慶祝
   goToPage('timer');
   document.getElementById('timerContainer').style.display = 'none';
   document.getElementById('doneEarlyPanel').style.display = 'none';
   document.getElementById('celebration').style.display = 'block';
   setTimeout(function() { document.getElementById('celebration').classList.add('show'); }, 10);
-  // 有考卷 → 顯示看答案按鈕
   document.getElementById('answerSection').style.display = currentPaper ? 'block' : 'none';
-  // 從圖庫隨機選一張顯示在完成頁
   var imgKeys = Object.keys(IMG);
   document.getElementById('celebrate-img').src = IMG[imgKeys[Math.floor(Math.random()*imgKeys.length)]];
   launchConfetti();
@@ -2383,7 +2400,14 @@ function doneEarly() {
     }
     saveData(data);
   }
-  // 顯示寫完了面板
+
+  if (timerExpired) {
+    // 30 分鐘已到 → 直接慶祝得分
+    showCelebration();
+    return;
+  }
+
+  // 還有時間 → 顯示寫完了面板
   document.getElementById('timerContainer').style.display = 'none';
   document.getElementById('doneEarlyPanel').style.display = 'block';
   document.getElementById('doneEarlyAnswer').style.display = currentPaper ? 'block' : 'none';
@@ -2409,7 +2433,9 @@ function showGlobalTimerBar() {
   document.body.classList.add('timer-active');
 }
 function hideGlobalTimerBar() {
-  document.getElementById('globalTimerBar').style.display = 'none';
+  var bar = document.getElementById('globalTimerBar');
+  bar.style.display = 'none';
+  bar.classList.remove('timer-expired');
   document.body.classList.remove('timer-active');
 }
 function updateGlobalTimerBar() {
