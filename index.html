@@ -1985,11 +1985,17 @@ function initCharBanner() {
 // === GASHAPON ===
 var currentPaper = null; // 抽到的具體考卷
 
+var lastTaskId = null;
 function spinGashapon() {
   if (spinning) return;
   spinning = true;
-  var idx = Math.floor(Math.random() * TASKS.length);
+  // 防連續重複：跟上次不同
+  var idx;
+  do {
+    idx = Math.floor(Math.random() * TASKS.length);
+  } while (TASKS[idx].id === lastTaskId && TASKS.length > 1);
   currentTask = TASKS[idx];
+  lastTaskId = currentTask.id;
   currentPaper = null;
 
   // 國文/數學/生活：抽具體考卷
