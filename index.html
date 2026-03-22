@@ -458,6 +458,26 @@ body {
   padding:12px 30px; font-size:20px; font-weight:700;
   cursor:pointer; margin:8px 0; display:block; width:100%;
 }
+.pdf-buttons { margin:10px 0; }
+.pdf-btn {
+  border:none; border-radius:20px;
+  padding:12px 20px; font-size:18px; font-weight:700;
+  cursor:pointer; margin:4px; width:calc(50% - 12px);
+  display:inline-block; vertical-align:top;
+  box-shadow:0 3px 10px rgba(0,0,0,0.15);
+}
+.pdf-question {
+  background:linear-gradient(135deg, #FF9A9E, #FAD0C4);
+  color:#8B3A62;
+}
+.pdf-answer {
+  background:linear-gradient(135deg, #A1C4FD, #C2E9FB);
+  color:#2D5F8A;
+}
+.pdf-hint {
+  font-size:13px; color:var(--text-light); margin-top:6px;
+  opacity:0.8; letter-spacing:0.5px;
+}
 .result-card .corner-deco {
   position:absolute; font-size:18px;
 }
@@ -1000,6 +1020,11 @@ body {
     <div class="magic-text">✨ 今天的任務是 ✨</div>
     <div class="task-name-big" id="resultTaskName"></div>
     <div class="task-desc" id="resultTaskDesc"></div>
+    <div class="pdf-buttons" id="pdfButtons" style="display:none;">
+      <button class="pdf-btn pdf-question" onclick="openPdf('question')">📝 看題目</button>
+      <button class="pdf-btn pdf-answer" onclick="openPdf('answer')">✅ 看答案</button>
+      <div class="pdf-hint">在白紙上寫答案，寫完再看答案對答案喔！</div>
+    </div>
     <button class="go-btn" onclick="startTimer()">開始計時！⏱️</button>
     <button class="retry-btn" onclick="retryTwist()">再扭一次 🔄</button>
   </div>
@@ -1739,6 +1764,25 @@ var EXAM_PAPERS = [
 // 段考卷解鎖日期
 var EXAM_UNLOCK = { midterm: '2026-04-06', final: '2026-06-07' };
 
+// === PDF 設定 ===
+// PDF_BASE_URL：PDF 檔案的根目錄網址（GitHub Pages）
+var PDF_BASE_URL = 'https://25x7dr568d-creator.github.io/exam-pdfs/';
+
+// 科目 → 資料夾名稱
+var SUBJECT_FOLDER = { chinese: '國語', math: '數學', life: '生活' };
+
+// 取得 PDF 網址
+// type: 'question' 或 'answer'
+function getPdfUrl(paper, type) {
+  if (!paper) return '';
+  var folder = (paper.type === 'midterm' || paper.type === 'final') ? '段考' : SUBJECT_FOLDER[paper.subject];
+  var subFolder = (type === 'question') ? '題目' : '答案';
+  // 檔名 = source_name（空格換底線）
+  var baseName = (paper.source + '_' + paper.name).replace(/\s+/g, '_');
+  var fileName = (type === 'answer') ? baseName + '_答案' : baseName;
+  return PDF_BASE_URL + folder + '/' + subFolder + '/' + fileName + '.pdf';
+}
+
 // 學校版本（同版本的卷排後面，跨版本優先出）
 // key = subject id, value = 學校使用的出版社 source 前綴
 var SCHOOL_VERSION = { chinese: '南一', math: '康軒', life: '南一' };
@@ -1961,9 +2005,17 @@ function openCapsule() {
     document.getElementById('resultChar').src = IMG[randomImgKey()];
     document.getElementById('resultTaskName').textContent = currentTask.emoji + ' ' + currentTask.name;
     document.getElementById('resultTaskDesc').textContent = currentTask.desc;
+    // 有考卷時顯示 PDF 按鈕
+    document.getElementById('pdfButtons').style.display = currentPaper ? 'block' : 'none';
     document.getElementById('resultCard').classList.add('active');
     launchConfetti();
   }, 600);
+}
+
+function openPdf(type) {
+  if (!currentPaper) return;
+  var url = getPdfUrl(currentPaper, type);
+  window.open(url, '_blank');
 }
 
 function retryTwist() {
