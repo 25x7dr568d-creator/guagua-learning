@@ -2627,7 +2627,8 @@ function showDayDetail(dateStr) {
   for (var i = 0; i < records.length; i++) {
     var r = records[i];
     html += '<div class="calendar-detail-item">';
-    html += '<span class="calendar-detail-task">' + r.task + '</span> +1 ⭐';
+    var taskLabel = r.paperDesc ? r.paperDesc : r.task;
+    html += '<span class="calendar-detail-task">' + taskLabel + '</span> ⭐';
     if (r.note) {
       html += '<div class="calendar-detail-note">' + linkify(r.note) + '</div>';
     }
